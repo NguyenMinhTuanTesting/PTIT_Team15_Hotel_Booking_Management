@@ -32,6 +32,11 @@ def seed():
     if not cursor.fetchone():
         hashed = bcrypt.hashpw(b"admin", bcrypt.gensalt()).decode('utf-8')
         cursor.execute("INSERT INTO users (username, password_hash, role) VALUES (%s, %s, %s)", ('admin', hashed, 'admin'))
+
+    cursor.execute("SELECT * FROM users WHERE username = 'staff'")
+    if not cursor.fetchone():
+        hashed_staff = bcrypt.hashpw(b"staff", bcrypt.gensalt()).decode('utf-8')
+        cursor.execute("INSERT INTO users (username, password_hash, role) VALUES (%s, %s, %s)", ('staff', hashed_staff, 'staff'))
         
     cursor.execute("SELECT COUNT(*) FROM rooms")
     if cursor.fetchone()[0] == 0:
@@ -55,7 +60,7 @@ def seed():
                 
     conn.commit()
     cursor.close()
-    print("Khởi tạo dữ liệu mẫu thành công! Tài khoản: admin | Mật khẩu: admin")
+    print("Khởi tạo dữ liệu mẫu thành công!\n- Admin: admin / admin\n- Staff: staff / staff")
 
 if __name__ == "__main__":
     seed()

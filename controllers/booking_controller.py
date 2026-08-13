@@ -6,7 +6,7 @@ class BookingController:
     def __init__(self):
         self.db = DatabaseHelper()
 
-    def find_available_rooms(self, check_in, check_out, callback):
+    def find_available_rooms(self, check_in, check_out, callback, room_type=None, sort_order="DESC"):
         def task():
             try:
                 conn = self.db.get_connection()
@@ -24,11 +24,22 @@ class BookingController:
                         )
                     )
                 """
-                cursor.execute(query, (check_out, check_in, check_out))
+                params = [check_out, check_in, check_out]
+                if room_type and room_type != "Tất cả":
+                    query += " AND room_type = %s"
+                    params.append(room_type)
+                
+                if sort_order == "ASC":
+                    query += " ORDER BY price ASC"
+                else:
+                    query += " ORDER BY price DESC"
+
+                cursor.execute(query, tuple(params))
                 rooms = cursor.fetchall()
                 cursor.close()
                 callback(rooms)
-            except Exception:
+            except Exception as e:
+                print("Error finding rooms:", e)
                 callback([])
         threading.Thread(target=task, daemon=True).start()
 

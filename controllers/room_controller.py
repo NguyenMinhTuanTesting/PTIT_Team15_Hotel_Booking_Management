@@ -30,7 +30,7 @@ class RoomController:
         t = threading.Thread(target=cleaner_task, daemon=True)
         t.start()
 
-    def get_rooms_status_by_time(self, check_in, check_out, callback):
+    def get_rooms_status_by_time(self, check_in, check_out, callback, room_type=None, sort_order=None):
         def fetch_task():
             try:
                 conn = self.db.get_connection()
@@ -39,7 +39,9 @@ class RoomController:
                 query = """
                     SELECT r.room_id, r.room_number, r.room_type, r.price,
                            b.booking_id, b.status as booking_status,
-                           c.first_name, c.last_name
+                           b.check_in_date as booking_check_in,
+                           b.check_out_date as booking_check_out,
+                           c.first_name, c.last_name, c.phone, c.email
                     FROM rooms r
                     LEFT JOIN bookings b ON r.room_id = b.room_id 
                          AND b.status != 'CANCELLED'
@@ -50,9 +52,20 @@ class RoomController:
                          (b.status IN ('CHECKED_OUT', 'CLEANING') AND b.check_in_date < %s)
                          )
                     LEFT JOIN customers c ON b.customer_id = c.customer_id
-                    ORDER BY r.room_id ASC
                 """
-                cursor.execute(query, (check_out, check_in, check_out))
+                params = [check_out, check_in, check_out]
+                if room_type and room_type != "Tất cả":
+                    query += " WHERE r.room_type = %s"
+                    params.append(room_type)
+                
+                if sort_order == "DESC":
+                    query += " ORDER BY r.price DESC, r.room_id ASC"
+                elif sort_order == "ASC":
+                    query += " ORDER BY r.price ASC, r.room_id ASC"
+                else:
+                    query += " ORDER BY r.room_id ASC"
+
+                cursor.execute(query, tuple(params))
                 results = cursor.fetchall()
                 cursor.close()
                 
@@ -83,7 +96,11 @@ class RoomController:
                             "price": row['price'],
                             "status": status,
                             "booking_id": row['booking_id'],
-                            "customer_name": customer_name
+                            "customer_name": customer_name,
+                            "customer_phone": row.get('phone', ''),
+                            "customer_email": row.get('email', ''),
+                            "booking_check_in": row.get('booking_check_in'),
+                            "booking_check_out": row.get('booking_check_out')
                         }
                 
                 callback(list(rooms_map.values()))
