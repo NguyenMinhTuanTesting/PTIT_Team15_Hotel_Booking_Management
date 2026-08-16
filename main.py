@@ -13,6 +13,7 @@ from utils.scheduler import BookingScheduler
 class MainApp(ctk.CTk):
     def __init__(self):
         super().__init__()
+        self.title("HAI YEN Hotel Management")
         ctk.set_appearance_mode("dark")
         ctk.set_default_color_theme("blue")
         # Set initial geometry to screen size
